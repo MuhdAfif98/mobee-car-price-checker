@@ -13,6 +13,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -45,23 +46,39 @@ class MobeeCar extends Component implements HasTable, HasForms
                     ->formatStateUsing(fn (Model $record): string => "RM " . number_format($record->price, 2)),
             ])
             ->filters([
-                Filter::make('brand')
-                    ->form([
-                        Select::make('brand')
-                            ->placeholder('Select brand')
-                            ->options(Car::query()->distinct()->pluck('brand')->toArray())
-                            ->getSearchResultsUsing(fn (string $search): array => Car::where('brand', 'like', "%{$search}%")->distinct()->limit(50)->pluck('brand')->toArray())
-                            ->native(false)
-                    ])
-                    ->query(function (Builder $query, $data): Builder {
-                        if ($data['brand']) {
-                            $query->where('brand', $data['brand']);
-                            \Illuminate\Support\Facades\Log::info($query->toSql());
-                        }
-                        return $query;
-                    }),
+                SelectFilter::make('brand')
+                    ->options([
+                        'Proton' => 'Proton',
+                        'Perodua' => 'Perodua',
+                    ])->preload(),
+                SelectFilter::make('year')
+                    ->options(generateYearOptions())->preload(),
+                SelectFilter::make('model')
+                    ->options(
+                        function () {
+                            $models = Car::query()
+                                ->distinct()
+                                ->pluck('model')
+                                ->sort()
+                                ->values();
 
+                            return $models->combine($models);
+                        }
+                    )->preload(),
+                SelectFilter::make('variant')
+                    ->options(
+                        function () {
+                            $variants = Car::query()
+                                ->distinct()
+                                ->pluck('variant')
+                                ->sort()
+                                ->values();
+
+                            return $variants->combine($variants);
+                        }
+                    )->preload(),
             ], layout: FiltersLayout::AboveContent)
+            ->searchable()
             ->selectCurrentPageOnly(true);
     }
 
