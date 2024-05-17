@@ -21,6 +21,8 @@ Data table that shows a list of car details and their respective prices. This pr
 - ```php artisan db:seed CarSeeder```
 
 - ```composer dump-autoload```
+- 
+- ```php artisan serve```
 
 ## Brief Intro
 
