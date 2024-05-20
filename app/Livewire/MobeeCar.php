@@ -51,11 +51,11 @@ class MobeeCar extends Component implements HasTable, HasForms
                         $recordsPerPage = $livewire->tableRecordsPerPage;
                         return (string) ($rowLoop->iteration + ($recordsPerPage * ($page - 1)));
                     }),
-                TextColumn::make('brand'),
-                TextColumn::make('year'),
-                TextColumn::make('model'),
-                TextColumn::make('variant'),
-                TextColumn::make('price')
+                TextColumn::make('brand')->searchable(),
+                TextColumn::make('year')->searchable(),
+                TextColumn::make('model')->searchable(),
+                TextColumn::make('variant')->searchable(),
+                TextColumn::make('price')->searchable()
                     ->label('Price')
                     ->formatStateUsing(fn (Model $record): string => "RM " . number_format($record->price, 2)),
             ])
@@ -91,9 +91,7 @@ class MobeeCar extends Component implements HasTable, HasForms
                             return $variants->combine($variants);
                         }
                     )->preload(),
-            ], layout: FiltersLayout::AboveContent)
-            ->searchable()
-            ->selectCurrentPageOnly(true);
+            ], layout: FiltersLayout::AboveContent);
     }
 
     public function mount()
@@ -121,7 +119,62 @@ class MobeeCar extends Component implements HasTable, HasForms
             'variant' => $this->variant,
         ])->pluck('price')->first();
 
-        $this->price = $car ? $car : 'Not found';
+        $this->price = $car ? 'RM '.$car : 'Not found';
+    }
+
+    public function filterCar()
+    {
+        $this->brands = Car::query()
+            ->when($this->year, function ($query) {
+                $query->where('year', $this->year);
+            })
+            ->when($this->variant, function ($query) {
+                $query->where('variant', $this->variant);
+            })
+            ->when($this->model, function ($query) {
+                $query->where('model', $this->model);
+            })
+            ->distinct()
+            ->pluck('brand');
+
+        $this->variants = Car::query()
+            ->when($this->year, function ($query) {
+                $query->where('year', $this->year);
+            })
+            ->when($this->brand, function ($query) {
+                $query->where('brand', $this->brand);
+            })
+            ->when($this->model, function ($query) {
+                $query->where('model', $this->model);
+            })
+            ->distinct()
+            ->pluck('variant');
+
+        $this->years = Car::query()
+            ->when($this->brand, function ($query) {
+                $query->where('brand', $this->brand);
+            })
+            ->when($this->variant, function ($query) {
+                $query->where('variant', $this->variant);
+            })
+            ->when($this->model, function ($query) {
+                $query->where('model', $this->model);
+            })
+            ->distinct()
+            ->pluck('year');
+
+        $this->models = Car::query()
+            ->when($this->year, function ($query) {
+                $query->where('year', $this->year);
+            })
+            ->when($this->variant, function ($query) {
+                $query->where('variant', $this->variant);
+            })
+            ->when($this->brand, function ($query) {
+                $query->where('brand', $this->brand);
+            })
+            ->distinct()
+            ->pluck('model');
     }
 
     public function render()
